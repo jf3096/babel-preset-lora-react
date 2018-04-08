@@ -12,7 +12,11 @@ const plugins = [
   // don't work without it: https://github.com/babel/babel/issues/7215
   require.resolve('babel-plugin-transform-es2015-destructuring'),
   // class { handleClick = () => { } }
-  require.resolve('babel-plugin-transform-class-properties'),
+  [
+    require.resolve('@babel/plugin-proposal-class-properties'),
+    {loose: true},
+  ],
+  require.resolve('babel-plugin-transform-object-assign'),
   // The following two plugins use Object.assign directly, instead of Babel's
   // extends helper. Note that this assumes `Object.assign` is available.
   // { ...todo, completed: true }
@@ -38,9 +42,33 @@ const plugins = [
       regenerator: true,
     },
   ],
-  require.resolve('transform-decorators-legacy')
-];
+  require.resolve('babel-plugin-transform-decorators-legacy'),
 
+  /**
+   * 支持: var foo = object.foo ?? "default";
+   */
+  require.resolve('@babel/plugin-proposal-nullish-coalescing-operator'),
+
+  /**
+   * 支持: const safe = obj?.qux?.baz;
+   */
+  require.resolve('@babel/plugin-proposal-optional-chaining'),
+
+  /**
+   * let a = do {
+       if(x > 10) {
+         'big';
+       } else {
+         'small';
+       }
+     };
+   // is equivalent to:
+   let a = x > 10 ? 'big' : 'small';
+   */
+  require.resolve('@babel/plugin-proposal-do-expressions'),
+
+  require.resolve('babel-plugin-react-require'),
+];
 // This is similar to how `env` works in Babel:
 // https://babeljs.io/docs/usage/babelrc/#env-option
 // We are not using `env` because it’s ignored in versions > babel-core@6.10.4:
@@ -112,7 +140,9 @@ if (env === 'test') {
           // Do not transform modules to CJS
           modules: false,
           exclude: [
-            'transform-async-to-generator'
+            'transform-regenerator',
+            'transform-async-to-generator',
+            'transform-unicode-regex'
           ]
         },
       ],
@@ -126,16 +156,13 @@ if (env === 'test') {
         {
           // Async functions are converted to generators by babel-preset-env
           async: false,
-        },
-        [
-          require.resolve('fast-async'),
-          {
-            spec: true
-          }
-        ]
+        }
       ],
       // Adds syntax support for import()
       require.resolve('babel-plugin-syntax-dynamic-import'),
+
+      // Compile the new function bind operator :: to ES5.
+      require.resolve('babel-plugin-transform-function-bind')
     ]),
   };
 
@@ -146,5 +173,11 @@ if (env === 'test') {
     // plugins.push.apply(plugins, [
     //   require.resolve('babel-plugin-transform-react-constant-elements')
     // ]);
+  }
+
+  if (env === 'production') {
+    plugins.push.apply(plugins, [
+      require.resolve('babel-plugin-transform-react-remove-prop-types'),
+    ]);
   }
 }
